@@ -28,3 +28,6 @@ dev-dist
 
 # Vite cache
 /.cache
+
+# codepipe workspace (added by `codepipe init`)
+.codepipe/

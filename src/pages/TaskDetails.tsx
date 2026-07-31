@@ -8,9 +8,12 @@ import { Emoji } from "emoji-picker-react";
 import { useContext, useEffect } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { getColorName } from "ntc-ts";
+import { useTheme } from "@emotion/react";
+import { MarkdownDescription } from "../components/tasks/MarkdownDescription";
 
 const TaskDetails = () => {
   const { user } = useContext(UserContext);
+  const theme = useTheme();
   const { tasks, emojisStyle } = user;
   const { id } = useParams();
   const formattedId = id?.replace(".", "");
@@ -65,7 +68,13 @@ const TaskDetails = () => {
             </TableRow>
             <TableRow>
               <TableHeader>Description:</TableHeader>
-              <TableData translate="no">{task?.description}</TableData>
+              <DescriptionTableData translate="no">
+                {task.description ? (
+                  <MarkdownDescription text={task.description} color={theme.secondary} />
+                ) : (
+                  <i>none</i>
+                )}
+              </DescriptionTableData>
             </TableRow>
             <TableRow>
               <TableHeader>Color:</TableHeader>
@@ -189,6 +198,15 @@ const TableData = styled.td`
   @media (min-width: 768px) {
     font-size: 1.1em;
   }
+`;
+
+// the description is the only cell holding block content (lists, code blocks),
+// so it opts out of the flex/break-all layout the other cells share
+const DescriptionTableData = styled(TableData)`
+  display: block;
+  vertical-align: top;
+  word-break: normal;
+  overflow-wrap: anywhere;
 `;
 
 const ColorSquare = styled.div<{ clr: string }>`

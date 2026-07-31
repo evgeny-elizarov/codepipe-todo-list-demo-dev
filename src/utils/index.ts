@@ -5,6 +5,8 @@ export { systemInfo } from "./getSystemInfo";
 export { saveQRCode } from "./saveQRCode";
 export { showToast } from "./showToast";
 export { generateUUID } from "./generateUUID";
+export { parseMarkdown, stripMarkdown } from "./markdown";
+export type { Token, InlineToken } from "./markdown";
 export { timeAgo, formatDate, calculateDateDifference, shortRelativeTime } from "./timeUtils";
 export {
   initDB,

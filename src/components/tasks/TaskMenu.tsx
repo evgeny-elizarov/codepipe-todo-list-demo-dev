@@ -27,7 +27,7 @@ import { TaskIcon, TaskItem } from "..";
 import { UserContext } from "../../contexts/UserContext";
 import { useResponsiveDisplay } from "../../hooks/useResponsiveDisplay";
 import { Task } from "../../types/user";
-import { calculateDateDifference, generateUUID, showToast } from "../../utils";
+import { calculateDateDifference, generateUUID, showToast, stripMarkdown } from "../../utils";
 import { useTheme } from "@emotion/react";
 import { TaskContext } from "../../contexts/TaskContext";
 import { ColorPalette } from "../../theme/themeConfig";
@@ -148,8 +148,11 @@ export const TaskMenu = () => {
     const voiceVolume = settings.voiceVolume;
     const taskName = selectedTask.name ? selectedTask.name + ". " : "";
     const taskDescription = selectedTask?.description
-      ? selectedTask?.description?.replace(/((?:https?):\/\/[^\s/$.?#].[^\s]*)/gi, "") + ". "
-      : ""; // remove links from description
+      ? stripMarkdown(selectedTask.description).replace(
+          /((?:https?):\/\/[^\s/$.?#].[^\s]*)/gi,
+          "",
+        ) + ". "
+      : ""; // remove markdown syntax and links from description
     // Read task date in voice language
     const taskDate = new Intl.DateTimeFormat(voice ? voice.lang : navigator.language, {
       dateStyle: "full",

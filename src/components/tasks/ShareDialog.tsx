@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import type { Task } from "../../types/user";
 import { UserContext } from "../../contexts/UserContext";
-import { saveQRCode, showToast, systemInfo } from "../../utils";
+import { saveQRCode, showToast, stripMarkdown, systemInfo } from "../../utils";
 import {
   Alert,
   AlertTitle,
@@ -115,7 +115,8 @@ export const ShareDialog = ({ open, onClose, selectedTask }: ShareDialogProps) =
       selectedTask.deadline ? new Date(selectedTask.deadline) : new Date(),
     );
 
-    let { description = "" } = selectedTask;
+    // the calendar entry is plain text, so markdown syntax is stripped out
+    let description = stripMarkdown(selectedTask.description ?? "");
     const urlMatch = description.match(/(https?:\/\/[^\s]+)/);
     const eventUrl = urlMatch?.[0] || ""; // extract the first url from description
     description = description.replace(urlMatch?.[0] || "", "").trim();

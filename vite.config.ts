@@ -29,6 +29,16 @@ export default defineConfig({
     globals: true,
     include: ["src/**/*.test.ts"],
   },
+  server: {
+    proxy: {
+      // Optional local backend (see server/README.md). Proxying keeps dev
+      // requests same-origin; the app works fine when nothing is listening.
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react({
       jsxImportSource: "@emotion/react",

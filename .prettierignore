@@ -3,3 +3,5 @@ dist
 dev-dist
 package-lock.json
 .cache
+server/.venv
+server/todo.db

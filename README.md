@@ -146,6 +146,34 @@ The app will now be running at [http://localhost:5173/](http://localhost:5173/).
 > [!TIP]
 > For mobile device testing, use `npm run dev:host` to preview the app on your local network with HTTPS (required for camera features) and a QR code in the terminal for quick access. To enable PWA features in development, see [vite.config.ts](vite.config.ts).
 
+## 🗄️ Backend (optional)
+
+The app is local-first: `localStorage` is the source of truth and everything works
+with no server at all — that is how it is deployed on Netlify, which publishes
+static assets only.
+
+For optional local persistence, [`server/`](server/README.md) contains a small
+single-user **FastAPI + SQLite** service that stores tasks and categories:
+
+```bash
+cd server
+uv venv && uv pip install -e ".[dev]"
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+`npm run dev` proxies `/api` to `http://localhost:8000`, so nothing else needs
+configuring. With the server running, tasks and categories are pulled on startup
+and mirrored in the background as you edit them; with it stopped, or offline,
+the app behaves exactly as before and the accumulated changes are sent once it
+is reachable again.
+
+Set `VITE_API_URL` to point at a different origin (e.g. `VITE_API_URL=http://192.168.0.10:8000/api`);
+it defaults to `/api`. To keep the same-origin proxy but move the backend, set
+`VITE_API_PROXY_TARGET` instead (e.g. `VITE_API_PROXY_TARGET=http://localhost:9000 npm run dev`);
+it defaults to `http://localhost:8000` and is only read by the dev server.
+
+See [server/README.md](server/README.md) for the API reference and configuration.
+
 ## 📷 Screenshots
 
 <img src="https://raw.githubusercontent.com/maciekt07/TodoApp/main/screenshots/ss1.png" width="300px" />

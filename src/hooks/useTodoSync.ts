@@ -244,6 +244,5 @@ export function useTodoSync(user: User, setUser: React.Dispatch<React.SetStateAc
     // `user.tasks` / `user.categories` are the trigger, not an input: `flush`
     // re-reads the latest committed state itself, so a mutation that lands
     // while a flush is in flight is coalesced instead of lost.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flush, snapshotVersion, user.tasks, user.categories]);
 }

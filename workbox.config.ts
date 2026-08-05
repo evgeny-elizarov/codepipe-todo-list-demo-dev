@@ -129,6 +129,17 @@ const workbox: Partial<GenerateSWOptions> = {
         },
       },
     },
+    // DON'T cache the optional todo backend
+    // Tasks must never be served from a stale cache; the sync layer handles
+    // offline itself. These requests already fall through today, but stating it
+    // stops a future runtimeCaching entry from silently catching them.
+    {
+      urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+      handler: "NetworkOnly",
+      options: {
+        cacheName: "todo-api-no-cache",
+      },
+    },
     // Navigation routes using Network First strategy
     {
       urlPattern: ({ request }) => request.mode === "navigate",

@@ -29,3 +29,15 @@ dev-dist
 # Vite cache
 /.cache
 .codepipe
+
+# Optional Python backend (server/)
+server/todo.db
+*.db-journal
+server/.venv
+__pycache__/
+.pytest_cache/
+server/*.egg-info/
+
+# Local env overrides
+.env
+.env.local

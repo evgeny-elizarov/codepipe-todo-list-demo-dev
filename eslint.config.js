@@ -5,7 +5,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "dev-dist", ".cache"] },
+  // "server" is the optional Python backend — nothing there is linted by ESLint,
+  // and a local .venv would otherwise be walked.
+  { ignores: ["dist", "dev-dist", ".cache", "server"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

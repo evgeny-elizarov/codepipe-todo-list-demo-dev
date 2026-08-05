@@ -6,7 +6,9 @@ export { saveQRCode } from "./saveQRCode";
 export { showToast } from "./showToast";
 export { generateUUID } from "./generateUUID";
 export { parseMarkdown, stripMarkdown } from "./markdown";
-export type { Token, InlineToken } from "./markdown";
+export type { Token, InlineToken, ListItem } from "./markdown";
+export { applyMarkdownAction } from "./markdownEditing";
+export type { MarkdownAction, EditorSelection } from "./markdownEditing";
 export { timeAgo, formatDate, calculateDateDifference, shortRelativeTime } from "./timeUtils";
 export {
   initDB,

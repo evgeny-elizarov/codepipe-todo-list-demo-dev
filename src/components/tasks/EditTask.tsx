@@ -1,11 +1,5 @@
 import styled from "@emotion/styled";
-import {
-  CancelRounded,
-  EditCalendarRounded,
-  EditRounded,
-  SaveRounded,
-  VisibilityRounded,
-} from "@mui/icons-material";
+import { CancelRounded, EditCalendarRounded, SaveRounded } from "@mui/icons-material";
 import {
   Dialog,
   DialogActions,
@@ -14,8 +8,6 @@ import {
   InputAdornment,
   TextField,
   TextFieldProps,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
@@ -24,11 +16,11 @@ import { DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH } from "../../constants";
 import { UserContext } from "../../contexts/UserContext";
 import { DialogBtn } from "../../styles";
 import { Category, Task } from "../../types/user";
-import { formatDate, getFontColor, showToast, timeAgo } from "../../utils";
+import { formatDate, showToast, timeAgo } from "../../utils";
 import { useTheme } from "@emotion/react";
 import { ColorPalette } from "../../theme/themeConfig";
 import { CategorySelect } from "../CategorySelect";
-import { MarkdownDescription } from "./MarkdownDescription";
+import { DescriptionInput } from "./DescriptionInput";
 
 const DEFAULT_EDIT_TASK_SUBTITLE = "Edit the details of the task.";
 
@@ -45,7 +37,6 @@ export const EditTask = ({ open, task, onClose }: EditTaskProps) => {
   const [emoji, setEmoji] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [editLastSaveLabel, setEditLastSaveLabel] = useState<string>(DEFAULT_EDIT_TASK_SUBTITLE);
-  const [descriptionMode, setDescriptionMode] = useState<"edit" | "preview">("edit");
 
   const theme = useTheme();
 
@@ -208,53 +199,17 @@ export const EditTask = ({ open, task, onClose }: EditTaskProps) => {
               : "Name is required"
           }
         />
-        <DescriptionField>
-          <DescriptionModeToggle
-            value={descriptionMode}
-            exclusive
-            size="small"
-            aria-label="description mode"
-            onChange={(_event, value: "edit" | "preview" | null) =>
-              value && setDescriptionMode(value)
-            }
-          >
-            <ToggleButton value="edit" aria-label="edit description">
-              <EditRounded /> &nbsp; Edit
-            </ToggleButton>
-            <ToggleButton value="preview" aria-label="preview description">
-              <VisibilityRounded /> &nbsp; Preview
-            </ToggleButton>
-          </DescriptionModeToggle>
-          {descriptionMode === "edit" ? (
-            <StyledInput
-              label="Description"
-              name="description"
-              autoComplete="off"
-              value={editedTask?.description || ""}
-              onChange={handleInputChange}
-              multiline
-              rows={4}
-              margin="normal"
-              error={descriptionError}
-              helperText={descriptionHelperText}
-            />
-          ) : (
-            <>
-              <PreviewBox>
-                {editedTask?.description ? (
-                  <MarkdownDescription text={editedTask.description} color={theme.secondary} />
-                ) : (
-                  <PreviewPlaceholder>Nothing to preview</PreviewPlaceholder>
-                )}
-              </PreviewBox>
-              {descriptionHelperText && (
-                <PreviewHelperText clr={descriptionError ? ColorPalette.red : undefined}>
-                  {descriptionHelperText}
-                </PreviewHelperText>
-              )}
-            </>
-          )}
-        </DescriptionField>
+        <DescriptionInput
+          layout="dialog"
+          label="Description"
+          value={editedTask?.description || ""}
+          onChange={(description) =>
+            setEditedTask((prevTask) => ({ ...(prevTask as Task), description }))
+          }
+          error={descriptionError}
+          helperColor={descriptionError ? ColorPalette.red : undefined}
+          helperText={descriptionHelperText}
+        />
         <StyledInput
           label="Deadline date"
           name="deadline"
@@ -352,47 +307,4 @@ const StyledInput = styled(UnstyledTextField)`
   & .MuiInputBase-root {
     border-radius: 16px;
   }
-`;
-
-const DescriptionField = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-`;
-
-const DescriptionModeToggle = styled(ToggleButtonGroup)`
-  align-self: flex-end;
-  margin-bottom: -8px;
-  & .MuiToggleButton-root {
-    border-radius: 12px;
-    text-transform: none;
-    padding: 4px 12px;
-    color: ${({ theme }) => getFontColor(theme.secondary)};
-    border-color: ${({ theme }) => getFontColor(theme.secondary)}3b;
-  }
-  & .MuiSvgIcon-root {
-    font-size: 18px;
-  }
-`;
-
-const PreviewBox = styled.div`
-  box-sizing: border-box;
-  min-height: 106px;
-  margin: 22px 0 3px;
-  padding: 16px 14px;
-  border: 1px solid ${({ theme }) => getFontColor(theme.secondary)}3b;
-  border-radius: 16px;
-  color: ${({ theme }) => getFontColor(theme.secondary)};
-  overflow-wrap: anywhere;
-`;
-
-const PreviewHelperText = styled.span<{ clr?: string }>`
-  margin: 0 14px 14px;
-  font-size: 0.75rem;
-  opacity: 0.8;
-  color: ${({ clr, theme }) => clr || getFontColor(theme.secondary)};
-`;
-
-const PreviewPlaceholder = styled.span`
-  opacity: 0.6;
 `;

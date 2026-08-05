@@ -4,9 +4,11 @@
 export const TASK_NAME_MAX_LENGTH = 40;
 
 /**
- * Maximum length allowed for task descriptions.
+ * Maximum length allowed for task descriptions. Measured on the raw markdown
+ * source, which is what gets stored — headings, quotes and checklists spend a
+ * noticeable share of the budget on markers alone.
  */
-export const DESCRIPTION_MAX_LENGTH = 350;
+export const DESCRIPTION_MAX_LENGTH = 1000;
 
 /**
  * Shorter length for displaying descriptions with a "Show More" button.

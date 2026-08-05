@@ -2,14 +2,8 @@ import { Category, Task } from "../types/user";
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddTaskButton, Container, StyledInput } from "../styles";
-import { AddTaskRounded, CancelRounded, EditRounded, VisibilityRounded } from "@mui/icons-material";
-import {
-  IconButton,
-  InputAdornment,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from "@mui/material";
+import { AddTaskRounded, CancelRounded } from "@mui/icons-material";
+import { IconButton, InputAdornment, Tooltip } from "@mui/material";
 import { DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH } from "../constants";
 import { ColorPicker, TopBar, CustomEmojiPicker } from "../components";
 import { UserContext } from "../contexts/UserContext";
@@ -20,8 +14,7 @@ import { ColorPalette } from "../theme/themeConfig";
 import InputThemeProvider from "../contexts/InputThemeProvider";
 import { CategorySelect } from "../components/CategorySelect";
 import { useToasterStore } from "react-hot-toast";
-import { MarkdownDescription } from "../components/tasks/MarkdownDescription";
-import styled from "@emotion/styled";
+import { DescriptionInput } from "../components/tasks/DescriptionInput";
 
 const AddTask = () => {
   const { user, setUser } = useContext(UserContext);
@@ -44,7 +37,6 @@ const AddTask = () => {
   );
 
   const [isDeadlineFocused, setIsDeadlineFocused] = useState<boolean>(false);
-  const [descriptionMode, setDescriptionMode] = useState<"edit" | "preview">("edit");
 
   const n = useNavigate();
   const { toasts } = useToasterStore();
@@ -78,8 +70,7 @@ const AddTask = () => {
     }
   };
 
-  const handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newDescription = event.target.value;
+  const handleDescriptionChange = (newDescription: string) => {
     setDescription(newDescription);
     if (newDescription.length > DESCRIPTION_MAX_LENGTH) {
       setDescriptionError(
@@ -182,54 +173,16 @@ const AddTask = () => {
                   : nameError
             }
           />
-          <DescriptionField>
-            <DescriptionModeToggle
-              value={descriptionMode}
-              exclusive
-              size="small"
-              aria-label="description mode"
-              onChange={(_event, value: "edit" | "preview" | null) =>
-                value && setDescriptionMode(value)
-              }
-            >
-              <ToggleButton value="edit" aria-label="edit description">
-                <EditRounded /> &nbsp; Edit
-              </ToggleButton>
-              <ToggleButton value="preview" aria-label="preview description">
-                <VisibilityRounded /> &nbsp; Preview
-              </ToggleButton>
-            </DescriptionModeToggle>
-            {descriptionMode === "edit" ? (
-              <StyledInput
-                label="Task Description"
-                name="name"
-                placeholder="Enter task description"
-                autoComplete="off"
-                value={description}
-                onChange={handleDescriptionChange}
-                multiline
-                rows={4}
-                error={descriptionError !== ""}
-                helpercolor={descriptionError && ColorPalette.red}
-                helperText={descriptionHelperText}
-              />
-            ) : (
-              <>
-                <PreviewBox>
-                  {description ? (
-                    <MarkdownDescription text={description} color={theme.secondary} />
-                  ) : (
-                    <PreviewPlaceholder>Nothing to preview</PreviewPlaceholder>
-                  )}
-                </PreviewBox>
-                {descriptionHelperText && (
-                  <PreviewHelperText clr={descriptionError ? ColorPalette.red : undefined}>
-                    {descriptionHelperText}
-                  </PreviewHelperText>
-                )}
-              </>
-            )}
-          </DescriptionField>
+          <DescriptionInput
+            layout="page"
+            label="Task Description"
+            placeholder="Enter task description"
+            value={description}
+            onChange={handleDescriptionChange}
+            error={descriptionError !== ""}
+            helperColor={descriptionError ? ColorPalette.red : undefined}
+            helperText={descriptionHelperText}
+          />
           <StyledInput
             label="Task Deadline"
             name="name"
@@ -293,48 +246,3 @@ const AddTask = () => {
 };
 
 export default AddTask;
-
-// 400px input + the 12px margin StyledInput carries on each side
-const DescriptionField = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 424px;
-  max-width: 100%;
-`;
-
-const DescriptionModeToggle = styled(ToggleButtonGroup)`
-  align-self: flex-end;
-  margin: 0 12px -4px;
-  & .MuiToggleButton-root {
-    border-radius: 12px;
-    text-transform: none;
-    padding: 4px 12px;
-    color: ${({ theme }) => getFontColor(theme.secondary)};
-    border-color: ${({ theme }) => getFontColor(theme.secondary)}3b;
-  }
-  & .MuiSvgIcon-root {
-    font-size: 18px;
-  }
-`;
-
-const PreviewBox = styled.div`
-  box-sizing: border-box;
-  min-height: 106px;
-  margin: 12px;
-  padding: 16px 14px;
-  border: 1px solid ${({ theme }) => getFontColor(theme.secondary)}3b;
-  border-radius: 16px;
-  color: ${({ theme }) => getFontColor(theme.secondary)};
-  overflow-wrap: anywhere;
-`;
-
-const PreviewPlaceholder = styled.span`
-  opacity: 0.6;
-`;
-
-const PreviewHelperText = styled.span<{ clr?: string }>`
-  margin: -9px 26px 12px;
-  font-size: 0.75rem;
-  opacity: 0.8;
-  color: ${({ clr, theme }) => clr || getFontColor(theme.secondary)};
-`;

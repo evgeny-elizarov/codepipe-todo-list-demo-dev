@@ -12,9 +12,9 @@ const inlineOf = (text: string): InlineToken[] => {
 
 /** syntax the dialect does not support — it has to survive as plain text */
 const UNSUPPORTED_SYNTAX = [
-  "# Heading",
-  "## Another heading",
-  "> a quote",
+  "#### too deep",
+  "#nospace",
+  "--",
   "| a | b |",
   "![alt](https://example.com/i.png)",
   "_underscore_",
@@ -117,10 +117,10 @@ describe("parseMarkdown", () => {
         type: "list",
         ordered: false,
         items: [
-          [{ type: "text", value: "one" }],
-          [{ type: "text", value: "two" }],
-          [{ type: "text", value: "three" }],
-          [{ type: "text", value: "four" }],
+          { children: [{ type: "text", value: "one" }] },
+          { children: [{ type: "text", value: "two" }] },
+          { children: [{ type: "text", value: "three" }] },
+          { children: [{ type: "text", value: "four" }] },
         ],
       },
     ]);
@@ -132,7 +132,10 @@ describe("parseMarkdown", () => {
         type: "list",
         ordered: true,
         start: 3,
-        items: [[{ type: "text", value: "one" }], [{ type: "text", value: "two" }]],
+        items: [
+          { children: [{ type: "text", value: "one" }] },
+          { children: [{ type: "text", value: "two" }] },
+        ],
       },
     ]);
     expect(parseMarkdown("1. one\n2. two")[0]).toMatchObject({
@@ -182,6 +185,201 @@ describe("parseMarkdown", () => {
       { type: "text", value: "![alt](https://example.com/i.png)" },
     ]);
   });
+
+  it("parses headings of the three supported levels", () => {
+    expect(parseMarkdown("# a\n## b\n### c")).toEqual([
+      { type: "heading", level: 1, children: [{ type: "text", value: "a" }] },
+      { type: "heading", level: 2, children: [{ type: "text", value: "b" }] },
+      { type: "heading", level: 3, children: [{ type: "text", value: "c" }] },
+    ]);
+  });
+
+  it("closes an open paragraph before a heading", () => {
+    expect(parseMarkdown("text\n# a")).toEqual([
+      { type: "paragraph", children: [{ type: "text", value: "text" }] },
+      { type: "heading", level: 1, children: [{ type: "text", value: "a" }] },
+    ]);
+  });
+
+  it("parses a blockquote and keeps its line breaks", () => {
+    expect(parseMarkdown("> a\n> b")).toEqual([
+      {
+        type: "blockquote",
+        children: [
+          {
+            type: "paragraph",
+            children: [
+              { type: "text", value: "a" },
+              { type: "break" },
+              { type: "text", value: "b" },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("parses blocks inside a blockquote", () => {
+    expect(parseMarkdown("> # a")).toEqual([
+      {
+        type: "blockquote",
+        children: [{ type: "heading", level: 1, children: [{ type: "text", value: "a" }] }],
+      },
+    ]);
+  });
+
+  it("splits paragraphs inside a blockquote on a bare marker line", () => {
+    expect(parseMarkdown("> a\n>\n> b")).toEqual([
+      {
+        type: "blockquote",
+        children: [
+          { type: "paragraph", children: [{ type: "text", value: "a" }] },
+          { type: "paragraph", children: [{ type: "text", value: "b" }] },
+        ],
+      },
+    ]);
+  });
+
+  it("nests blockquotes", () => {
+    expect(parseMarkdown(">> a")).toEqual([
+      {
+        type: "blockquote",
+        children: [
+          {
+            type: "blockquote",
+            children: [{ type: "paragraph", children: [{ type: "text", value: "a" }] }],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("degrades a quote past the nesting limit to text, losing no characters", () => {
+    expect(stripMarkdown(">>>>>> a")).toBe(">> a");
+  });
+
+  it("parses a thematic break but not a shorter dash run", () => {
+    expect(parseMarkdown("---")).toEqual([{ type: "thematicBreak" }]);
+    expect(parseMarkdown("----")).toEqual([{ type: "thematicBreak" }]);
+    expect(parseMarkdown("--")).toEqual([
+      { type: "paragraph", children: [{ type: "text", value: "--" }] },
+    ]);
+  });
+
+  it("parses task list items and their state", () => {
+    expect(parseMarkdown("- [ ] a\n- [x] b\n- [X] c")).toEqual([
+      {
+        type: "list",
+        ordered: false,
+        items: [
+          { children: [{ type: "text", value: "a" }], checked: false },
+          { children: [{ type: "text", value: "b" }], checked: true },
+          { children: [{ type: "text", value: "c" }], checked: true },
+        ],
+      },
+    ]);
+  });
+
+  it("parses a task item with no text", () => {
+    expect(parseMarkdown("- [x]")).toEqual([
+      { type: "list", ordered: false, items: [{ children: [], checked: true }] },
+    ]);
+  });
+
+  it("only honours the task marker on bulleted items", () => {
+    expect(parseMarkdown("1. [ ] a")).toEqual([
+      {
+        type: "list",
+        ordered: true,
+        start: 1,
+        items: [{ children: [{ type: "text", value: "[ ] a" }] }],
+      },
+    ]);
+  });
+
+  it("nests a list under the item above it", () => {
+    expect(parseMarkdown("- a\n  - b\n- c")).toEqual([
+      {
+        type: "list",
+        ordered: false,
+        items: [
+          {
+            children: [{ type: "text", value: "a" }],
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [{ children: [{ type: "text", value: "b" }] }],
+              },
+            ],
+          },
+          { children: [{ type: "text", value: "c" }] },
+        ],
+      },
+    ]);
+  });
+
+  it("nests with two spaces, four spaces or a tab alike", () => {
+    for (const source of ["- a\n  - b", "- a\n    - b", "- a\n\t- b"]) {
+      expect(parseMarkdown(source)[0]).toMatchObject({
+        type: "list",
+        items: [
+          {
+            children: [{ type: "text", value: "a" }],
+            blocks: [{ type: "list", items: [{ children: [{ type: "text", value: "b" }] }] }],
+          },
+        ],
+      });
+    }
+  });
+
+  it("nests three levels deep", () => {
+    expect(parseMarkdown("- a\n  - b\n    - c")[0]).toMatchObject({
+      items: [
+        {
+          blocks: [
+            { items: [{ blocks: [{ items: [{ children: [{ type: "text", value: "c" }] }] }] }] },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("starts a nested ordered list under a bulleted item", () => {
+    expect(parseMarkdown("- a\n  1. b")[0]).toMatchObject({
+      type: "list",
+      ordered: false,
+      items: [{ blocks: [{ type: "list", ordered: true, start: 1 }] }],
+    });
+  });
+
+  it("gives one item two sibling nested lists when the flavour switches", () => {
+    expect(parseMarkdown("- a\n  - b\n  1. c")[0]).toMatchObject({
+      type: "list",
+      items: [
+        {
+          blocks: [
+            { type: "list", ordered: false, items: [{ children: [{ type: "text", value: "b" }] }] },
+            { type: "list", ordered: true, items: [{ children: [{ type: "text", value: "c" }] }] },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("keeps a flavour switch on the base level as two lists", () => {
+    expect(parseMarkdown("- a\n1. b")).toHaveLength(2);
+  });
+
+  it("normalises ragged nesting without losing text", () => {
+    expect(stripMarkdown("- a\n   - b\n  - c")).toBe("a\nb\nc");
+  });
+
+  it("lets a fence win over every block construct", () => {
+    expect(parseMarkdown("```\n# a\n> b\n- [ ] c\n---\n```")).toEqual([
+      { type: "codeBlock", value: "# a\n> b\n- [ ] c\n---" },
+    ]);
+  });
 });
 
 describe("stripMarkdown", () => {
@@ -217,6 +415,45 @@ describe("stripMarkdown", () => {
   it("preserves every character of unsupported syntax", () => {
     for (const input of UNSUPPORTED_SYNTAX) {
       expect(stripMarkdown(input)).toBe(input);
+    }
+  });
+
+  it("removes heading, quote and task markers", () => {
+    expect(stripMarkdown("## Heading")).toBe("Heading");
+    expect(stripMarkdown("> quoted")).toBe("quoted");
+    expect(stripMarkdown("> # a")).toBe("a");
+    expect(stripMarkdown("- [x] buy bread")).toBe("buy bread");
+  });
+
+  it("drops a thematic break without leaving a blank line behind", () => {
+    expect(stripMarkdown("---")).toBe("");
+    expect(stripMarkdown("a\n---\nb")).toBe("a\nb");
+  });
+
+  it("keeps one line per item in a nested list", () => {
+    expect(stripMarkdown("- a\n  - b\n- c")).toBe("a\nb\nc");
+  });
+
+  it("leaves no markers behind for read aloud, .ics and home cards", () => {
+    const description = [
+      "# Title",
+      "",
+      "> a quote",
+      "",
+      "- [x] done",
+      "- [ ] todo",
+      "  - nested",
+      "",
+      "---",
+      "",
+      "1. first",
+    ].join("\n");
+
+    const stripped = stripMarkdown(description);
+
+    expect(stripped).toBe("Title\na quote\ndone\ntodo\nnested\nfirst");
+    for (const marker of ["#", ">", "- [", "---"]) {
+      expect(stripped).not.toContain(marker);
     }
   });
 });

@@ -60,4 +60,12 @@ export const themeConfig: { [key: string]: { primaryColor: string; secondaryColo
     primaryColor: "#00e952",
     secondaryColor: "#011926",
   },
+  "Dark Lavender": {
+    primaryColor: "#d879e8",
+    secondaryColor: "#1a1220",
+  },
+  "Light Lavender": {
+    primaryColor: "#c85cd6",
+    secondaryColor: "#f6e9fb",
+  },
 };

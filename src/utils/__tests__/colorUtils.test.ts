@@ -1,5 +1,5 @@
 import type { SystemTheme } from "../../hooks/useSystemTheme";
-import { ColorPalette } from "../../theme/themeConfig";
+import { ColorPalette, themeConfig } from "../../theme/themeConfig";
 import type { DarkModeOptions } from "../../types/user";
 import { getFontColor, isDark, isDarkMode, isHexColor } from "../colorUtils";
 
@@ -70,6 +70,9 @@ const isDarkModeCases: [string, DarkModeOptions, SystemTheme, string, boolean][]
   ["auto mode with system dark", "auto", "dark", "#ffffff", false],
   ["auto mode with dark background", "auto", "light", "#000000", true],
   ["auto mode with light background", "auto", "dark", "#ffffff", false],
+  // The opposing systemTheme proves the result comes from the background, not the system theme
+  ["auto mode with Dark Lavender background", "auto", "light", "#1a1220", true],
+  ["auto mode with Light Lavender background", "auto", "dark", "#f6e9fb", false],
 ];
 
 describe("isDarkMode", () => {
@@ -79,4 +82,61 @@ describe("isDarkMode", () => {
       expect(isDarkMode(darkmode, systemTheme, backgroundColor)).toBe(expected);
     },
   );
+});
+
+// The app never computes a WCAG ratio at runtime - getFontColor only compares brightness -
+// so these helpers stay local to the test instead of becoming a production util.
+const channels = (hexColor: string): number[] =>
+  [1, 3, 5].map((index) => parseInt(hexColor.slice(index, index + 2), 16));
+
+const relativeLuminance = (hexColor: string): number => {
+  const [red, green, blue] = channels(hexColor)
+    .map((channel) => channel / 255)
+    .map((channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+};
+
+const contrastRatio = (colorA: string, colorB: string): number => {
+  const luminances = [relativeLuminance(colorA), relativeLuminance(colorB)];
+  return (Math.max(...luminances) + 0.05) / (Math.min(...luminances) + 0.05);
+};
+
+const channelSpread = (hexColor: string): number => {
+  const values = channels(hexColor);
+  return Math.max(...values) - Math.min(...values);
+};
+
+// Scoped deliberately to the lavender themes: several older primaries (Dark Pink, Light Pink,
+// Blush Blossom, Dark Purple) are below AA today, so an all-themes loop would fail on legacy data.
+const lavenderThemes = ["Dark Lavender", "Light Lavender"] as const;
+
+// Both entries declare secondaryColor explicitly; omitting it would fall back to the "#232e58"
+// default of createCustomTheme, so the isHexColor check below is also an "it is declared" check.
+const lavenderSurfaces = lavenderThemes.flatMap((name): [string, string][] => {
+  const { primaryColor, secondaryColor = "" } = themeConfig[name];
+  return [
+    [`${name} primaryColor`, primaryColor],
+    [`${name} secondaryColor`, secondaryColor],
+  ];
+});
+
+describe("lavender themes", () => {
+  test.each(lavenderSurfaces)(
+    "%s reaches WCAG AA against the font color the app picks",
+    (_, color) => {
+      expect(isHexColor(color)).toBe(true);
+      expect(contrastRatio(color, getFontColor(color))).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  // Guards against the primaries being treated as achromatic (channel spread <= 8), which would
+  // swap the system error/warning/info colors for neutral ones.
+  test.each(lavenderThemes)("%s primaryColor stays chromatic", (name) => {
+    expect(channelSpread(themeConfig[name].primaryColor)).toBeGreaterThan(8);
+  });
+
+  // Themes[0] / Themes[1] are the implicit system dark/light themes, indexed positionally.
+  it("are appended after the existing themes", () => {
+    expect(Object.keys(themeConfig).slice(-2)).toEqual([...lavenderThemes]);
+  });
 });

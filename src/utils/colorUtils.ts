@@ -43,6 +43,36 @@ export const getFontColor = (backgroundColor: string): string => {
 };
 
 /**
+ * Checks whether a color is (near) achromatic, i.e. its red, green and blue channels are
+ * close enough together for the color to read as a shade of gray.
+ * @param {string} color - The color in hex format (e.g. "#9E9E9E").
+ * @param {number} tolerance - Maximum allowed spread between the highest and lowest channel.
+ * @returns {boolean} False for anything that is not a valid hex color.
+ */
+export const isGrayscaleColor = (color: string, tolerance = 8): boolean => {
+  if (!isHexColor(color)) {
+    return false;
+  }
+
+  const hexColor = color.startsWith("#") ? color.slice(1) : color;
+
+  // If shorthand hex color (e.g., #fff), expand it to full form
+  const expandedHex =
+    hexColor.length === 3
+      ? hexColor
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : hexColor;
+
+  const red = parseInt(expandedHex.slice(0, 2), 16);
+  const green = parseInt(expandedHex.slice(2, 4), 16);
+  const blue = parseInt(expandedHex.slice(4, 6), 16);
+
+  return Math.max(red, green, blue) - Math.min(red, green, blue) <= tolerance;
+};
+
+/**
  * Determines if the provided color is considered dark based on its brightness.
  * @param {string} color - The color in hex format
  */

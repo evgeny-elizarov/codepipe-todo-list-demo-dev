@@ -146,6 +146,13 @@ The app will now be running at [http://localhost:5173/](http://localhost:5173/).
 > [!TIP]
 > For mobile device testing, use `npm run dev:host` to preview the app on your local network with HTTPS (required for camera features) and a QR code in the terminal for quick access. To enable PWA features in development, see [vite.config.ts](vite.config.ts).
 
+## 🤝 Contributing
+
+This repository uses a simplified Gitflow: `develop` is the working branch
+that all changes land on, `main` reflects production and is only updated
+through releases. Branch naming, the release process, and versioning are
+described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## 📷 Screenshots
 
 <img src="https://raw.githubusercontent.com/maciekt07/TodoApp/main/screenshots/ss1.png" width="300px" />
